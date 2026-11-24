@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
-import connectDB from '@/lib/mongodb'
+import connectDB, { describeDbError } from '@/lib/mongodb'
 import User from '@/models/User'
 import { signToken, setAuthCookie } from '@/lib/auth'
 import { str, readJson, rateLimit, clientIp } from '@/lib/validate'
@@ -54,7 +54,9 @@ export async function POST(request) {
     const token = signToken({ id: user._id.toString(), email: user.email, name: user.name, role: user.role })
     return setAuthCookie(NextResponse.json({ success: true, user: user.toSafeObject() }), token)
   } catch (error) {
-    console.error('Login error:', error)
+    console.error('Login error:', error?.code || '', error?.message, error)
+    const known = describeDbError(error)
+    if (known) return NextResponse.json({ error: known.error, code: known.code }, { status: known.status })
     const msg = process.env.NODE_ENV !== 'production' ? `Server error: ${error.message}` : 'Server error. Please try again.'
     return NextResponse.json({ error: msg }, { status: 500 })
   }

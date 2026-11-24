@@ -14,6 +14,11 @@ function getSecret() {
   return s
 }
 
+/** Call BEFORE creating anything in the DB, so a missing JWT_SECRET can't leave a half-created account. */
+export function assertAuthConfigured() {
+  getSecret()
+}
+
 export function signToken(payload) {
   return jwt.sign(payload, getSecret(), {
     algorithm: 'HS256',
@@ -72,9 +77,12 @@ export async function requireUser(request) {
     return { error: NextResponse.json({ error: 'This action is only available to customer accounts' }, { status: 403 }) }
   }
   await connectDB()
-  const dbUser = await User.findById(decoded.id).select('isActive role')
+  const dbUser = await User.findById(decoded.id).select('isActive role passwordChangedAt')
   if (!dbUser || !dbUser.isActive) {
     return { error: NextResponse.json({ error: 'Account not found or deactivated' }, { status: 401 }) }
+  }
+  if (dbUser.passwordChangedAt && decoded.iat && decoded.iat * 1000 < dbUser.passwordChangedAt.getTime()) {
+    return { error: NextResponse.json({ error: 'Your password was changed. Please log in again.' }, { status: 401 }) }
   }
   return { user: { id: decoded.id, role: dbUser.role } }
 }

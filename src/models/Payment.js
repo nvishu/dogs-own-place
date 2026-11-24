@@ -5,7 +5,7 @@ const PaymentSchema = new mongoose.Schema({
   appointment:    { type: mongoose.Schema.Types.ObjectId, ref: 'Appointment', required: true },
   amount:         { type: Number, required: true },
   currency:       { type: String, default: 'INR' },
-  method:         { type: String, enum: ['upi', 'card', 'net_banking', 'wallet', 'cash', 'mock'], default: 'mock' },
+  method:         { type: String, enum: ['upi', 'card', 'net_banking', 'wallet', 'cash', 'razorpay', 'mock'], default: 'mock' },
   status: {
     type: String,
     enum: ['pending', 'success', 'failed', 'refunded'],

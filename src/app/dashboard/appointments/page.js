@@ -5,9 +5,10 @@ import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { SERVICES } from '@/lib/constants'
-import { apiGetDogs, apiGetAppointments, apiCreateAppointment, apiCancelAppointment } from '@/lib/apiClient'
+import { apiGetDogs, apiGetAppointments, apiCreateAppointment, apiCancelAppointment, apiAvailability, apiReschedule } from '@/lib/apiClient'
+import { TIME_SLOTS } from '@/lib/constants'
+import toast from 'react-hot-toast'
 
-const TIME_SLOTS = ['08:00 AM','09:00 AM','10:00 AM','11:00 AM','12:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM','06:00 PM']
 
 const STATUS_COLORS = {
   confirmed: 'bg-blue-100 text-blue-700',
@@ -23,7 +24,7 @@ function AppointmentsContent() {
   const [user, setUser] = useState(null)
   const [dogs, setDogs] = useState([])
   const [appointments, setAppointments] = useState([])
-  const [view, setView] = useState(searchParams.get('service') ? 'book' : 'list')
+  const [view, setView] = useState(searchParams.get('service') || searchParams.get('view') === 'book' ? 'book' : 'list')
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [booked, setBooked] = useState(false)
@@ -45,6 +46,34 @@ function AppointmentsContent() {
   }, [router])
 
   const set = (k, v) => setForm(f => ({...f, [k]: v}))
+  const [full, setFull] = useState([])           // slots that are full / too soon for form.date
+  const [resched, setResched] = useState(null)   // { appt, date, time, full: [] }
+  const [reschedBusy, setReschedBusy] = useState(false)
+
+  useEffect(() => {
+    if (!form.date) { setFull([]); return }
+    let alive = true
+    apiAvailability(form.date).then(d => { if (alive) { setFull(d.unavailable || []); setForm(f => (d.unavailable || []).includes(f.time) ? { ...f, time: '' } : f) } }).catch(() => {})
+    return () => { alive = false }
+  }, [form.date])
+
+  useEffect(() => {
+    if (!resched?.date) return
+    let alive = true
+    apiAvailability(resched.date).then(d => { if (alive) setResched(r => r && ({ ...r, full: d.unavailable || [] })) }).catch(() => {})
+    return () => { alive = false }
+  }, [resched?.date])
+
+  const doReschedule = async () => {
+    if (!resched?.date || !resched?.time) return
+    setReschedBusy(true)
+    try {
+      const { appointment } = await apiReschedule(resched.appt._id, resched.date, resched.time)
+      setAppointments(prev => prev.map(a => a._id === appointment._id ? { ...a, ...appointment } : a))
+      toast.success('Booking moved — we will re-confirm the new time')
+      setResched(null)
+    } catch (e) { toast.error(e.message || 'Could not reschedule') } finally { setReschedBusy(false) }
+  }
   const selectedService = SERVICES.find(s => s.id === form.service)
   const selectedDog = dogs.find(d => d._id === form.dogId)
   const price = selectedService?.price[form.plan] || 0
@@ -87,7 +116,8 @@ function AppointmentsContent() {
           <div className="w-28 h-28 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6 text-6xl animate-bounce">🎉</div>
           <h1 className="font-display text-3xl font-bold text-brand-dark mb-2">Appointment Booked!</h1>
           <p className="text-gray-500 mb-2">Your <strong>{selectedService?.title}</strong> is confirmed for {form.date} at {form.time}</p>
-          <p className="text-brand-primary font-bold text-xl mb-8">₹{totalPrice.toLocaleString()}</p>
+          <p className="text-brand-primary font-bold text-xl mb-3">₹{totalPrice.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mb-8">Our team has been notified of your booking. A confirmation email is on its way to you.</p>
           <div className="flex flex-col gap-3">
             <Link href="/payment" className="btn-primary justify-center py-4">💳 Pay Now</Link>
             <button onClick={() => { setBooked(false); setView('list'); setForm({ service:'', dogId:'', plan:'standard', date:'', time:'', notes:'', address:'', homeVisit:false }) }}
@@ -146,6 +176,12 @@ function AppointmentsContent() {
                       <div className="flex gap-2">
                         {appt.paymentStatus !== 'paid' && appt.status !== 'cancelled' && (
                           <Link href="/payment" className="btn-primary text-xs px-3 py-2">Pay</Link>
+                        )}
+                        {(appt.status === 'confirmed' || appt.status === 'pending') && (
+                          <button onClick={() => setResched({ appt, date: '', time: '', full: [] })}
+                            className="text-xs px-3 py-2 border border-orange-200 text-brand-primary rounded-full hover:bg-brand-light transition-colors">
+                            Reschedule
+                          </button>
                         )}
                         {(appt.status === 'confirmed' || appt.status === 'pending') && (
                           <button onClick={() => handleCancel(appt._id)}
@@ -211,8 +247,9 @@ function AppointmentsContent() {
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
                   {TIME_SLOTS.map(t => (
-                    <button key={t} type="button" onClick={() => set('time', t)}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold border-2 transition-all ${form.time===t?'border-brand-primary bg-brand-light text-brand-primary':'border-gray-100 text-gray-500 hover:border-orange-300'}`}>
+                    <button key={t} type="button" onClick={() => set('time', t)} disabled={full.includes(t)}
+                      title={full.includes(t) ? 'Not available' : undefined}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold border-2 transition-all disabled:opacity-40 disabled:line-through disabled:cursor-not-allowed ${form.time===t?'border-brand-primary bg-brand-light text-brand-primary':'border-gray-100 text-gray-500 hover:border-orange-300'}`}>
                       {t}
                     </button>
                   ))}
@@ -250,6 +287,26 @@ function AppointmentsContent() {
           </div>
         )}
       </div>
+      {resched && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-label="Reschedule booking">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 max-h-[90svh] overflow-y-auto">
+            <h2 className="font-display text-xl font-bold text-brand-dark mb-1">Reschedule</h2>
+            <p className="text-sm text-gray-500 mb-4">{resched.appt.serviceName} — currently {resched.appt.date} at {resched.appt.time}</p>
+            <label className="text-sm font-semibold text-brand-dark mb-1.5 block" htmlFor="rs-date">New date</label>
+            <input id="rs-date" type="date" min={getMinDate()} value={resched.date} onChange={e => setResched(r => ({ ...r, date: e.target.value, time: '' }))} className="input-field mb-4" />
+            <div className="grid grid-cols-3 gap-2 mb-5">
+              {TIME_SLOTS.map(t => (
+                <button key={t} type="button" disabled={!resched.date || resched.full.includes(t)} onClick={() => setResched(r => ({ ...r, time: t }))}
+                  className={`py-2 rounded-xl text-xs font-bold border-2 disabled:opacity-40 disabled:line-through ${resched.time === t ? 'border-brand-primary bg-brand-light text-brand-primary' : 'border-gray-100 text-gray-500 hover:border-orange-300'}`}>{t}</button>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={doReschedule} disabled={!resched.date || !resched.time || reschedBusy} className="btn-primary flex-1 justify-center py-3 disabled:opacity-50">{reschedBusy ? 'Saving…' : 'Confirm new time'}</button>
+              <button onClick={() => setResched(null)} className="px-5 py-3 font-semibold text-gray-500">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
       <Footer />
     </div>
   )

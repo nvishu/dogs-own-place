@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import Appointment from '@/models/Appointment'
+import User from '@/models/User'
 import { requireUser } from '@/lib/auth'
+import { notifyCancellation } from '@/lib/notify'
 import { str, isValidId, readJson } from '@/lib/validate'
 
 export const dynamic = 'force-dynamic'
@@ -36,7 +38,10 @@ export async function PATCH(request, { params }) {
 
     appt.status = 'cancelled'
     appt.cancelReason = str(body.cancelReason, 300)
+    appt.seenByAdmin = false // shows up as "new" for the owner again
     await appt.save()
+    const customer = await User.findById(user.id).select('name email phone')
+    await notifyCancellation(appt, customer)
     return NextResponse.json({ success: true, appointment: appt })
   } catch (err) {
     console.error('PATCH /api/appointments/[id]:', err)

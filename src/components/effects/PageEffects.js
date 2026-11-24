@@ -96,10 +96,12 @@ export default function PageEffects() {
           >
             <ArrowUp size={20} />
           </button>
-          <a href={`tel:${SITE.phone.replace(/[^\d+]/g, '')}`} aria-label={`Call ${SITE.name}`}
-            className="fab md:hidden w-12 h-12 rounded-full bg-brand-dark text-white shadow-warm-lg flex items-center justify-center">
-            <Phone size={20} />
-          </a>
+          {SITE.phone && (
+            <a href={`tel:${SITE.phone.replace(/[^\d+]/g, '')}`} aria-label={`Call ${SITE.name}`}
+              className="fab md:hidden w-12 h-12 rounded-full bg-brand-dark text-white shadow-warm-lg flex items-center justify-center">
+              <Phone size={20} />
+            </a>
+          )}
           {wa && (
             <a href={wa} target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp"
               className="fab relative w-14 h-14 rounded-full text-white shadow-lg flex items-center justify-center" style={{ background: '#25D366' }}>

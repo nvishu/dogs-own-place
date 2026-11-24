@@ -1,10 +1,12 @@
 'use client'
 import { Toaster } from 'react-hot-toast'
+import { CartProvider } from '@/context/CartContext'
+import { CatalogueProvider } from '@/context/CatalogueContext'
 
 export default function Providers({ children }) {
   return (
     <>
-      {children}
+      <CatalogueProvider><CartProvider>{children}</CartProvider></CatalogueProvider>
       <Toaster
         position="top-center"
         toastOptions={{

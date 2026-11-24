@@ -43,7 +43,7 @@ export default function RegisterPage() {
   const [serverError, setServerError] = useState('')
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirm: '',
-    phone: '', city: '', address: '',
+    phone: '', city: '', address: '', consent: false,
   })
   const [errors, setErrors] = useState({})
 
@@ -62,6 +62,7 @@ export default function RegisterPage() {
     const e = {}
     if (!form.phone.replace(/[\s-]/g, '').match(/^\d{10}$/)) e.phone = 'Valid 10-digit phone required'
     if (!form.city.trim()) e.city = 'City is required'
+    if (!form.consent) e.consent = 'Please accept to create your account'
     setErrors(e); return Object.keys(e).length === 0
   }
 
@@ -76,7 +77,7 @@ export default function RegisterPage() {
     try {
       await apiRegister({
         name: form.name, email: form.email.trim(), password: form.password,
-        phone: form.phone.replace(/[\s-]/g, ''), city: form.city, address: form.address,
+        phone: form.phone.replace(/[\s-]/g, ''), city: form.city, address: form.address, consent: form.consent,
       })
       setStep(2)
     } catch (err) {
@@ -96,7 +97,7 @@ export default function RegisterPage() {
           <DogLogo size={44} showText={true} />
         </Link>
         <div className="relative z-10">
-          <h2 className="font-display text-4xl font-bold text-white mb-4">Join 5,000+<br/>Happy Dog Parents 🐾</h2>
+          <h2 className="font-display text-4xl font-bold text-white mb-4">Join Dog&apos;s Own Place<br/>Care for your dog 🐾</h2>
           <p className="text-orange-100/80 text-lg mb-8">Create your free account and give your dog the premium care they deserve.</p>
           <div className="space-y-3">
             {['Free to join — no credit card required','Book 8 premium dog services instantly','Track health records & vaccinations','GPS-tracked walks & real-time updates'].map(t => (
@@ -108,7 +109,7 @@ export default function RegisterPage() {
           </div>
         </div>
         <div className="relative z-10 grid grid-cols-2 gap-3">
-          {[['5,000+','Happy Dogs'],['98%','Satisfaction'],['50+','Cities'],['8','Services']].map(([v,l]) => (
+          {[['8','Services'],['Dog & Cat','Food shop'],['COD','Cash on delivery'],['Free','To join']].map(([v,l]) => (
             <div key={l} className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center border border-white/20">
               <div className="font-display font-bold text-2xl text-white">{v}</div>
               <div className="text-white/70 text-xs">{l}</div>
@@ -143,7 +144,7 @@ export default function RegisterPage() {
               <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6 text-5xl">🎉</div>
               <h2 className="font-display text-3xl font-bold text-brand-dark mb-2">You&apos;re in!</h2>
               <p className="text-gray-500 mb-8">Welcome to Dog&apos;s Own Place, {form.name.split(' ')[0]}! Your account is ready.</p>
-              <button onClick={() => router.push('/dashboard')} className="btn-primary px-8 py-4 text-base">
+              <button onClick={() => { const n = new URLSearchParams(window.location.search).get('next'); router.push(n && n.startsWith('/') && !n.startsWith('//') ? n : '/dashboard') }} className="btn-primary px-8 py-4 text-base">
                 Go to Dashboard 🐾
               </button>
             </div>
@@ -179,6 +180,14 @@ export default function RegisterPage() {
                       <textarea value={form.address} onChange={e => set('address', e.target.value)}
                         placeholder="Your full address for home visits"
                         className="input-field resize-none h-20" />
+                    </div>
+                    <div>
+                      <label className="flex items-start gap-3 text-sm text-gray-600 cursor-pointer">
+                        <input type="checkbox" checked={form.consent} onChange={e => set('consent', e.target.checked)}
+                          aria-describedby="consent-err" className="mt-1 w-4 h-4 accent-[#E8622A] flex-shrink-0" />
+                        <span>I am 18 or older. I agree to the <Link href="/terms" target="_blank" className="text-brand-primary font-semibold hover:underline">Terms of Service</Link> and <Link href="/privacy" target="_blank" className="text-brand-primary font-semibold hover:underline">Privacy Policy</Link>, and consent to {`DOG'S OWN PLACE`} using my details as described there.</span>
+                      </label>
+                      {errors.consent && <p id="consent-err" role="alert" className="text-red-500 text-xs mt-1.5">{errors.consent}</p>}
                     </div>
                   </>
                 )}

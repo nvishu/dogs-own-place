@@ -9,6 +9,7 @@ import {
   Shield, Search, Trash2, TrendingUp, Menu, Bell, Save, Edit3, X, Eye, Mail
 } from 'lucide-react'
 import Image from 'next/image'
+import toast from 'react-hot-toast'
 import MessagesTab from '@/components/admin/MessagesTab'
 import {
   apiAdminStats, apiAdminUsers, apiAdminToggleUser, apiAdminDeleteUser,
@@ -194,7 +195,7 @@ function BookingsTab() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    apiAdminBookings(statusFilter).then(d => setBookings(d.bookings||[])).catch(()=>{}).finally(()=>setLoading(false))
+    apiAdminBookings(statusFilter, true).then(d => setBookings(d.bookings||[])).catch(()=>{}).finally(()=>setLoading(false))
   }, [statusFilter])
 
   const updateStatus = async (id, status) => {
@@ -359,6 +360,27 @@ export default function AdminPage() {
     apiAdminStats().then(setStats).catch(console.error)
   }, [router])
 
+  // Live "new booking" alert: check every 30s while the admin panel is open
+  useEffect(() => {
+    if (!adminUser) return
+    let last = null
+    const check = async () => {
+      try {
+        const d = await apiAdminStats()
+        setStats(d)
+        const n = d?.stats?.newBookings ?? 0
+        if (last !== null && n > last) {
+          toast.success(`🐾 ${n - last} new booking${n - last > 1 ? 's' : ''} received!`, { duration: 8000 })
+        }
+        last = n
+        document.title = n > 0 ? `(${n}) New bookings — Admin` : 'Admin'
+      } catch {}
+    }
+    check()
+    const t = setInterval(check, 30000)
+    return () => clearInterval(t)
+  }, [adminUser])
+
   const logout = async () => {
     await apiLogout()
     router.push('/')
@@ -393,11 +415,23 @@ export default function AdminPage() {
               <button key={tab.id} onClick={() => { setActiveTab(tab.id); setSidebarOpen(false) }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${activeTab===tab.id?'bg-brand-primary text-white shadow-brand':'text-white/60 hover:text-white hover:bg-white/10'}`}>
                 <Icon size={18}/> {tab.label}
+                {tab.id === 'bookings' && (stats?.stats?.newBookings > 0) && (
+                  <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">{stats.stats.newBookings} new</span>
+                )}
               </button>
             )
           })}
         </nav>
         <div className="p-4 border-t border-white/10 space-y-2">
+          <Link href="/admin/agenda" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-amber-300 hover:text-amber-200 hover:bg-white/10 text-sm font-bold">
+            📅 Upcoming Bookings
+          </Link>
+          <Link href="/admin/products" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-amber-300 hover:text-amber-200 hover:bg-white/10 text-sm font-bold">
+            📦 Products &amp; Stock
+          </Link>
+          <Link href="/admin/orders" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-amber-300 hover:text-amber-200 hover:bg-white/10 text-sm font-bold">
+            🛒 Shop Orders
+          </Link>
           <Link href="/" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-white/60 hover:text-white hover:bg-white/10 text-sm font-semibold">
             <Eye size={16}/> View Site
           </Link>

@@ -115,7 +115,7 @@ const SERVICE_EXTRAS = {
       { q: 'What counts as an emergency?', a: 'Difficulty breathing, collapse, seizures, suspected poisoning, severe bleeding, eye injuries, prolonged vomiting/diarrhea, or any sudden distress.' },
       { q: 'How quickly can a vet reach me?', a: 'For home emergency visits in metro cities, our average response time is 28 minutes. Video consultations connect in under 2 minutes.' },
       { q: 'Is emergency care covered by pet insurance?', a: 'Most pet insurance plans cover emergency care. We provide itemized bills compatible with all major Indian pet insurance providers.' },
-      { q: 'What if I need specialist referral?', a: 'We have a network of 50+ specialist veterinarians. Our team will coordinate an urgent referral and transfer all records immediately.' },
+      { q: 'What if I need specialist referral?', a: 'We work with specialist veterinarians where needed. Our team will coordinate an urgent referral and transfer all records immediately.' },
     ],
     process: ['Call or app alert sent', 'Vet triaged in under 2 minutes', 'Video consult OR home visit dispatched', 'Treatment & stabilization', 'Follow-up care planned'],
     benefits: ['24/7 round-the-clock coverage', '28-min average home response', 'Specialists on call', 'Insurance-compatible billing', 'Complete emergency records'],
@@ -236,7 +236,7 @@ export default function ServiceDetailPage() {
               </div>
               {/* Stats strip */}
               <div className="grid grid-cols-3 gap-3 mt-4">
-                {extras.stats.map(stat => (
+                {(process.env.NEXT_PUBLIC_SHOW_SERVICE_STATS === 'true' ? extras.stats : []).map(stat => (
                   <div key={stat.l} className="bg-brand-light rounded-2xl p-3 text-center">
                     <div className="font-display font-bold text-xl text-brand-primary">{stat.v}</div>
                     <div className="text-xs text-gray-500 font-medium">{stat.l}</div>
@@ -440,7 +440,7 @@ export default function ServiceDetailPage() {
         <div className="page-container text-center text-white">
           <div className="text-5xl mb-4">{service.icon}</div>
           <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">Ready to Book {service.title}?</h2>
-          <p className="text-white/80 mb-8 text-lg">Join 5,000+ happy dog parents. Free cancellation, secure payment.</p>
+          <p className="text-white/80 mb-8 text-lg">Book in minutes from your dashboard. See our cancellation policy for details.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href={`/dashboard/appointments?service=${service.id}`}
               className="inline-flex items-center gap-2 bg-white text-brand-primary font-bold px-8 py-4 rounded-full hover:bg-brand-cream transition-colors shadow-warm-lg text-base">

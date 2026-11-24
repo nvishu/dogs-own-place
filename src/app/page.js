@@ -15,8 +15,8 @@ const jsonLd = {
       name: SITE.name,
       url: SITE.url,
       description: SITE.description,
-      telephone: SITE.phone,
-      email: SITE.email,
+      ...(SITE.phone ? { telephone: SITE.phone } : {}),
+      ...(SITE.email ? { email: SITE.email } : {}),
       priceRange: '₹₹',
       areaServed: { '@type': 'Country', name: 'India' },
       hasOfferCatalog: {
@@ -56,7 +56,7 @@ export default function HomePage() {
                 The Best 🐾
               </h1>
               <p className="text-lg text-brand-brown/70 mt-6 max-w-lg leading-relaxed">
-                From expert training to spa-level grooming — DOG&apos;S OWN PLACE is your one-stop destination for premium dog care. Trusted by 5,000+ happy dog parents across India.
+                From expert training to spa-level grooming — DOG&apos;S OWN PLACE is your one-stop destination for premium dog care. Plus a pet shop for dog and cat food, delivered to your door.
               </p>
               <div className="flex flex-wrap gap-4 mt-8">
                 <Link href="/auth/register" className="btn-primary btn-lg">
@@ -88,10 +88,10 @@ export default function HomePage() {
                   <Image fill sizes="(max-width: 768px) 100vw, 50vw" src="https://images.unsplash.com/photo-1601979031925-424e53b6caaa?w=400&auto=format&fit=crop&q=80" alt="Dog portrait" className="w-full h-full object-cover" />
                 </div>
                 <div className="absolute top-4 left-4 bg-white rounded-2xl shadow-warm px-4 py-3 flex items-center gap-2 animate-float" style={{animationDelay:'0.5s'}}>
-                  <span className="text-2xl">⭐</span>
+                  <span className="text-2xl">🛍️</span>
                   <div>
-                    <div className="font-bold text-brand-dark text-sm">4.9 / 5.0</div>
-                    <div className="text-xs text-gray-400">5,000+ Reviews</div>
+                    <div className="font-bold text-brand-dark text-sm">Pet Shop</div>
+                    <div className="text-xs text-gray-400">Dog &amp; cat food</div>
                   </div>
                 </div>
                 <div className="absolute bottom-12 right-0 bg-brand-primary text-white rounded-2xl shadow-brand px-4 py-3 animate-float" style={{animationDelay:'1.5s'}}>
@@ -169,8 +169,8 @@ export default function HomePage() {
                 <Image fill sizes="(max-width: 768px) 100vw, 50vw" src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=600&auto=format&fit=crop&q=80" alt="Dog walking" className="w-full h-full object-cover" />
               </div>
               <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl shadow-warm-lg p-5">
-                <div className="font-display font-bold text-3xl text-brand-primary">98%</div>
-                <div className="text-sm text-gray-500 font-medium">Customer satisfaction</div>
+                <div className="font-display font-bold text-3xl text-brand-primary">Free</div>
+                <div className="text-sm text-gray-500 font-medium">Delivery on shop orders above ₹999</div>
                 <div className="flex -space-x-2 mt-2">
                   {['🐕','🐩','🦮','🐈'].map((e, i) => (
                     <span key={i} className="w-7 h-7 rounded-full bg-orange-100 border-2 border-white flex items-center justify-center text-sm">{e}</span>
@@ -197,7 +197,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
+      {/* TESTIMONIALS — shown only when you add REAL reviews in src/lib/constants.js */}
+      {TESTIMONIALS.length > 0 && (
       <section className="py-20 bg-white">
         <div className="page-container">
           <div className="text-center mb-14">
@@ -223,6 +224,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* HOW IT WORKS */}
       <section className="py-20 bg-brand-cream dots-bg">
@@ -267,7 +269,7 @@ export default function HomePage() {
             Ready to Give Your Dog<br /><span className="text-brand-accent">The Best Life?</span>
           </h2>
           <p className="text-orange-200/70 text-lg mb-8 max-w-xl mx-auto">
-            Join 5,000+ dog parents who trust DOG&apos;S OWN PLACE for all their pet care needs.
+            Create a free account to book services and shop for your dog or cat.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/register" className="btn-primary btn-lg !bg-brand-accent hover:!bg-yellow-400 !text-brand-dark">

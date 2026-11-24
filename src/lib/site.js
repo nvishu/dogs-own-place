@@ -9,8 +9,9 @@ export const SITE = {
   description:
     "Professional dog training, walking, health checkups, vaccinations, grooming & more. Book trusted dog services online with DOG'S OWN PLACE.",
   url: (envUrl || (vercelUrl ? `https://${vercelUrl}` : 'http://localhost:3000')).replace(/\/$/, ''),
-  phone: process.env.NEXT_PUBLIC_PHONE || '+91 98765 43210',
-  email: process.env.NEXT_PUBLIC_EMAIL || 'hello@dogsownplace.com',
+  // Set these in Vercel (NEXT_PUBLIC_PHONE / NEXT_PUBLIC_EMAIL). Left empty on purpose so no made-up number is ever shown to customers.
+  phone: process.env.NEXT_PUBLIC_PHONE || '',
+  email: process.env.NEXT_PUBLIC_EMAIL || '',
   // digits only incl. country code, e.g. 919876543210 — the WhatsApp button shows only when set
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP || '',
   themeColor: '#E8622A',

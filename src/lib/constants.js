@@ -1,3 +1,4 @@
+import { PRODUCTS, FREE_DELIVERY_ABOVE } from '@/lib/products'
 export const SERVICES = [
   {
     id: 'training',
@@ -105,50 +106,20 @@ export const BREEDS = [
   'Rajapalayam', 'Kombai', 'Mudhol Hound', 'Chippiparai', 'Mixed Breed / Other',
 ]
 
-export const TESTIMONIALS = [
-  {
-    name: 'Priya Sharma',
-    location: 'Mumbai',
-    dog: 'Bruno (Lab, 3 yrs)',
-    text: 'DOP has been a lifesaver! Bruno has transformed so much after just 4 training sessions. The trainers are incredibly patient and professional.',
-    rating: 5,
-    avatar: 'PS',
-    color: '#E8622A',
-  },
-  {
-    name: 'Arjun Mehta',
-    location: 'Delhi',
-    dog: 'Bella (Golden, 2 yrs)',
-    text: 'The grooming service is absolutely top-notch. Bella always comes back looking like a show dog. Highly recommend the premium package!',
-    rating: 5,
-    avatar: 'AM',
-    color: '#2E7D32',
-  },
-  {
-    name: 'Sneha Patel',
-    location: 'Bangalore',
-    dog: 'Rocky (Husky, 4 yrs)',
-    text: 'Their emergency care saved Rocky\'s life when he ate something toxic. The team was there within 30 minutes. Forever grateful to DOP!',
-    rating: 5,
-    avatar: 'SP',
-    color: '#1565C0',
-  },
-  {
-    name: 'Vikram Nair',
-    location: 'Chennai',
-    dog: 'Coco (Beagle, 1 yr)',
-    text: 'The daily walks feature with GPS tracking gives me peace of mind. The walkers send adorable photos too! Coco loves them.',
-    rating: 5,
-    avatar: 'VN',
-    color: '#6A1B9A',
-  },
-]
+// Add REAL customer reviews here (with permission). The homepage section stays hidden while this list is empty.
+// Shape: { name, location, dog, text, rating, avatar: 'AB', color: '#E8622A' }
+export const TESTIMONIALS = []
 
-export const STATS = [
-  { value: '5,000+', label: 'Happy Dogs', icon: '🐕' },
-  { value: '500+', label: 'Expert Staff', icon: '👨‍⚕️' },
-  { value: '50+', label: 'Cities Served', icon: '🏙️' },
-  { value: '98%', label: 'Satisfaction Rate', icon: '⭐' },
+// Homepage / About numbers. Only TRUE, checkable figures belong here. To show your own real numbers, set
+// NEXT_PUBLIC_STATS in Vercel, e.g.  "320+|Dogs Served;12|Trainers;4|Cities"  (value|label pairs separated by ;)
+const ICONS = ['🐕', '👨‍⚕️', '🏙️', '⭐']
+const envStats = (process.env.NEXT_PUBLIC_STATS || '').split(';').map((x) => x.trim()).filter(Boolean)
+  .map((x, i) => { const [value, label] = x.split('|'); return value && label ? { value: value.trim(), label: label.trim(), icon: ICONS[i % ICONS.length] } : null }).filter(Boolean)
+export const STATS = envStats.length ? envStats : [
+  { value: String(SERVICES.length), label: 'Dog Care Services', icon: '🐾' },
+  { value: `${PRODUCTS.length}+`, label: 'Shop Products', icon: '🛍️' },
+  { value: 'COD', label: 'Cash on Delivery', icon: '💵' },
+  { value: 'Free', label: `Delivery above ₹${FREE_DELIVERY_ABOVE.toLocaleString('en-IN')}`, icon: '🚚' },
 ]
 
 export const PLANS = {
@@ -160,6 +131,7 @@ export const PLANS = {
 export const NAV_LINKS = [
   { href: '/',            label: 'Home' },
   { href: '/services',   label: 'Services' },
+  { href: '/shop',       label: 'Shop' },
   { href: '/about',      label: 'About' },
   { href: '/contact',    label: 'Contact' },
 ]
@@ -185,7 +157,9 @@ export const FAQS = [
   { q: 'How do I book a service?', a: 'Create a free account, add your dog, then choose a service, plan, date and time slot from your dashboard. You will see the final price before you confirm.' },
   { q: 'Can I get a home visit?', a: 'Yes. Select “home visit” while booking and add your address. A flat ₹200 home-visit fee is added to the plan price.' },
   { q: 'Can I cancel or reschedule a booking?', a: 'You can cancel an upcoming booking from your dashboard before it starts. To reschedule, cancel and book a new slot, or contact our team and we will help.' },
-  { q: 'Which cities do you serve?', a: 'We serve 50+ cities across India. Tell us your city on the contact page if you are unsure about coverage.' },
+  { q: 'Which cities do you serve?', a: 'Tell us your city on the contact page and we will confirm whether we can serve you.' },
   { q: 'Are my dog’s health records stored?', a: 'Yes. Each dog profile keeps vaccination and health records so you always have them in one place, accessible only from your account.' },
-  { q: 'What if I need urgent help?', a: 'Use the emergency number on the contact page. For serious emergencies, please go to your nearest veterinary hospital immediately.' },
+  { q: 'What if I need urgent help?', a: 'Call us on the number on the contact page. For serious emergencies, please go to your nearest veterinary hospital immediately.' },
 ]
+
+export const TIME_SLOTS = ['08:00 AM','09:00 AM','10:00 AM','11:00 AM','12:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM','06:00 PM']

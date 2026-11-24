@@ -2,7 +2,8 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, X, ChevronDown, User, LogOut, Shield } from 'lucide-react'
+import { Menu, X, ChevronDown, User, LogOut, Shield, ShoppingCart } from 'lucide-react'
+import { useCart } from '@/context/CartContext'
 import { NAV_LINKS } from '@/lib/constants'
 import { apiLogout } from '@/lib/apiClient'
 import DogLogo from '@/components/ui/DogLogo'
@@ -15,6 +16,14 @@ export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const menuRef = useRef(null)
+  const { count: cartCount } = useCart()
+  const CartLink = ({ className = '' }) => (
+    <Link href="/cart" aria-label={`Cart, ${cartCount} item${cartCount === 1 ? '' : 's'}`}
+      className={`relative w-11 h-11 flex items-center justify-center rounded-full text-brand-dark hover:bg-brand-light transition ${className}`}>
+      <ShoppingCart size={22} />
+      {cartCount > 0 && <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-brand-primary text-white text-[11px] font-bold flex items-center justify-center">{cartCount > 99 ? '99+' : cartCount}</span>}
+    </Link>
+  )
 
   useEffect(() => {
     const stored = localStorage.getItem('dop_user')
@@ -75,6 +84,7 @@ export default function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
+            <CartLink />
             {user ? (
               <div className="relative" ref={menuRef}>
                 <button onClick={() => setUserMenuOpen(!userMenuOpen)} aria-haspopup="menu" aria-expanded={userMenuOpen}
@@ -106,6 +116,14 @@ export default function Navbar() {
                       className="flex items-center gap-3 px-4 py-3 hover:bg-brand-light transition-colors text-brand-dark font-medium">
                       📅 Appointments
                     </Link>
+                    <Link href="/dashboard/profile" onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-brand-light transition-colors text-brand-dark font-medium">
+                      ⚙️ My Profile
+                    </Link>
+                    <Link href="/dashboard/orders" onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-brand-light transition-colors text-brand-dark font-medium">
+                      🛍️ My Orders
+                    </Link>
                     <hr className="border-orange-100" />
                     <button onClick={logout}
                       className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-red-600 font-medium w-full text-left">
@@ -122,9 +140,12 @@ export default function Navbar() {
             )}
           </div>
 
+          <div className="md:hidden flex items-center">
+          <CartLink />
           <button onClick={() => setOpen(!open)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} aria-controls="mobile-menu" className="md:hidden w-11 h-11 -mr-2 flex items-center justify-center rounded-full text-brand-dark hover:bg-brand-light active:scale-90 transition">
             {open ? <X size={24} /> : <Menu size={24} />}
           </button>
+          </div>
         </div>
 
         {open && (
@@ -147,6 +168,7 @@ export default function Navbar() {
                   </Link>
                 )}
                 <Link href="/dashboard" onClick={() => setOpen(false)} className="block py-3 px-4 rounded-xl font-semibold text-brand-dark hover:bg-brand-light transition-colors">Dashboard</Link>
+                <Link href="/dashboard/orders" onClick={() => setOpen(false)} className="block py-3 px-4 rounded-xl font-semibold text-brand-dark hover:bg-brand-light transition-colors">My Orders</Link>
                 <button onClick={logout} className="block py-3 px-4 rounded-xl font-semibold text-red-600 hover:bg-red-50 transition-colors w-full text-left">Sign Out</button>
               </>
             ) : (

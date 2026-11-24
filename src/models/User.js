@@ -12,6 +12,11 @@ const UserSchema = new mongoose.Schema({
   avatar:   { type: String, default: '' },
   isActive: { type: Boolean, default: true },
   loyaltyPoints: { type: Number, default: 0 },
+  emailVerified:  { type: Boolean, default: false },
+  emailVerifiedAt: { type: Date },
+  passwordChangedAt: { type: Date }, // sessions issued before this are rejected
+  consentAt:      { type: Date },
+  consentVersion: { type: String, default: '' },
 }, { timestamps: true })
 
 // Hash password before saving

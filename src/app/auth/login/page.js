@@ -20,7 +20,9 @@ export default function LoginPage() {
     try {
       const data = await apiLogin(form)
       // Redirect admin to /admin, users to /dashboard
-      router.push(data.user?.role === 'admin' ? '/admin' : '/dashboard')
+      const next = new URLSearchParams(window.location.search).get('next')
+      const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : null // only same-site paths
+      router.push(data.user?.role === 'admin' ? '/admin' : (safeNext || '/dashboard'))
     } catch (err) {
       setError(err.message || 'Invalid email or password')
       setLoading(false)
@@ -56,10 +58,10 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="relative z-10 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
-          <p className="text-white/90 text-sm italic">&ldquo;DOP has been a lifesaver — Bruno transformed in just 4 training sessions!&rdquo;</p>
+          <p className="text-white/90 text-sm">Book services, order dog &amp; cat food and keep your dog&apos;s details in one place.</p>
           <div className="flex items-center gap-3 mt-3">
-            <div className="w-8 h-8 rounded-full bg-brand-accent flex items-center justify-center text-white font-bold text-sm">PS</div>
-            <div className="text-white/70 text-xs">Priya Sharma · Mumbai</div>
+            <div className="w-8 h-8 rounded-full bg-brand-accent flex items-center justify-center text-sm">🐾</div>
+            <div className="text-white/70 text-xs">Dog&apos;s Own Place</div>
           </div>
         </div>
       </div>
@@ -103,6 +105,10 @@ export default function LoginPage() {
                   {show ? <EyeOff size={17}/> : <Eye size={17}/>}
                 </button>
               </div>
+            </div>
+
+            <div className="text-right -mt-2">
+              <Link href="/auth/forgot-password" className="text-sm font-semibold text-brand-primary hover:underline">Forgot password?</Link>
             </div>
 
             <button type="submit" disabled={loading}

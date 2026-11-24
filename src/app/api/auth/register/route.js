@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
+import connectDB, { describeDbError } from '@/lib/mongodb'
 import User from '@/models/User'
-import { signToken, setAuthCookie } from '@/lib/auth'
+import { signToken, setAuthCookie, assertAuthConfigured } from '@/lib/auth'
 import { str, readJson, rateLimit, clientIp, EMAIL_RE } from '@/lib/validate'
+import { notifyNewUser } from '@/lib/notify'
+import { issueVerification } from '@/lib/accountMail'
+import { POLICY } from '@/lib/business'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +19,9 @@ export async function POST(request) {
     const city = str(body.city, 80)
     const address = str(body.address, 300)
 
+    if (body.consent !== true) {
+      return NextResponse.json({ error: 'Please accept the Terms of Service and Privacy Policy to create an account' }, { status: 400 })
+    }
     if (!name || !email || !password) {
       return NextResponse.json({ error: 'Name, email and password are required' }, { status: 400 })
     }
@@ -35,6 +41,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Too many sign-ups. Please try again later.' }, { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } })
     }
 
+    assertAuthConfigured() // fail early if JWT_SECRET is missing/short
     await connectDB()
     if (await User.findOne({ email })) {
       return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 })
@@ -43,19 +50,28 @@ export async function POST(request) {
     // role is never taken from the request body
     let user
     try {
-      user = await User.create({ name, email, password, phone, city, address })
+      user = await User.create({ name, email, password, phone, city, address, consentAt: new Date(), consentVersion: POLICY.consentVersion })
     } catch (e) {
       if (e?.code === 11000) return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 })
       throw e
     }
 
     const token = signToken({ id: user._id.toString(), email: user.email, name: user.name, role: user.role })
+    await notifyNewUser(user) // never throws; owner gets an alert, customer gets a welcome mail
+    await issueVerification(user).catch((e) => console.error('verification mail failed:', e?.message))
     return setAuthCookie(
       NextResponse.json({ success: true, message: 'Account created successfully!', user: user.toSafeObject() }, { status: 201 }),
       token
     )
   } catch (error) {
-    console.error('Register error:', error)
+    // The REAL reason is always in Vercel → Deployments → Functions/Logs ("Register error:")
+    console.error('Register error:', error?.code || '', error?.message, error)
+    const known = describeDbError(error)
+    if (known) return NextResponse.json({ error: known.error, code: known.code }, { status: known.status })
+    if (error?.name === 'ValidationError') {
+      const first = Object.values(error.errors || {})[0]?.message
+      return NextResponse.json({ error: first || 'Please check the details you entered' }, { status: 400 })
+    }
     const msg = process.env.NODE_ENV !== 'production' ? `Server error: ${error.message}` : 'Server error. Please try again.'
     return NextResponse.json({ error: msg }, { status: 500 })
   }

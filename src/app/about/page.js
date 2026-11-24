@@ -21,8 +21,8 @@ export default function AboutPage() {
             <div className="stagger">
               <span className="badge bg-orange-100 text-brand-primary mb-4">🐾 Our Story</span>
               <h1 className="section-title">Built by Dog Lovers,<br/><span className="text-brand-primary">For Dog Lovers</span></h1>
-              <p className="text-gray-600 leading-relaxed mt-5">DOG&apos;S OWN PLACE was founded in 2020 by a group of passionate dog parents who were frustrated with the lack of quality, reliable dog care services in India. We set out to build the platform we wished existed.</p>
-              <p className="text-gray-600 leading-relaxed mt-4">Today, DOP serves 5,000+ dog families across 50+ Indian cities, with a team of 500+ certified professionals dedicated to your dog&apos;s happiness and health.</p>
+              <p className="text-gray-600 leading-relaxed mt-5">DOG&apos;S OWN PLACE brings everyday dog care together in one place — training, walking, grooming, health care and daycare, plus a pet shop for dog and cat food. We built it so busy dog parents can book trusted care and order what their pet needs in a few taps.</p>
+              <p className="text-gray-600 leading-relaxed mt-4">Our promise is simple: clear prices, honest information and care that puts your dog&apos;s happiness and health first.</p>
               <div className="flex gap-4 mt-8">
                 <Link href="/services" className="btn-primary">Explore Services</Link>
                 <Link href="/contact" className="btn-secondary">Contact Us</Link>

@@ -5,6 +5,8 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import toast from 'react-hot-toast'
 import { apiSendContact } from '@/lib/apiClient'
+import { SITE } from '@/lib/site'
+import { BUSINESS } from '@/lib/business'
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name:'', email:'', phone:'', subject:'', message:'', website:'' })
@@ -32,7 +34,7 @@ export default function ContactPage() {
         <div className="page-container text-center">
           <span className="badge bg-orange-100 text-brand-primary mb-4">📞 Contact Us</span>
           <h1 className="section-title mb-4">We&apos;d Love to Hear From You</h1>
-          <p className="section-subtitle mx-auto">Our team responds within 2 hours.</p>
+          <p className="section-subtitle mx-auto">Questions about a service, an order or your dog&apos;s care? Send us a message and we&apos;ll get back to you.</p>
         </div>
       </section>
 
@@ -42,11 +44,11 @@ export default function ContactPage() {
             <div className="lg:col-span-2 space-y-6">
               <div className="space-y-5">
                 {[
-                  {icon:'📍',title:'Office',lines:['123 Pawsome Street','Bandra West, Mumbai 400050']},
-                  {icon:'📞',title:'Phone',lines:['+91 98765 43210','+91 98765 43211 (Emergency)']},
-                  {icon:'✉️',title:'Email',lines:['hello@dogsownplace.com','support@dogsownplace.com']},
-                  {icon:'⏰',title:'Hours',lines:['Mon–Sun: 7 AM – 9 PM','Emergency: 24 × 7']},
-                ].map(item => (
+                  BUSINESS.address && {icon:'📍',title:'Office',lines:[BUSINESS.address]},
+                  SITE.phone && {icon:'📞',title:'Phone',lines:[SITE.phone]},
+                  SITE.email && {icon:'✉️',title:'Email',lines:[SITE.email]},
+                  {icon:'⏰',title:'Hours',lines:[BUSINESS.hours]},
+                ].filter(Boolean).map(item => (
                   <div key={item.title} className="flex gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-brand-light flex items-center justify-center text-xl flex-shrink-0">{item.icon}</div>
                     <div>
@@ -56,19 +58,16 @@ export default function ContactPage() {
                   </div>
                 ))}
               </div>
-              <div className="card bg-brand-dark text-white">
-                <h3 className="font-bold mb-2">🚨 Emergency Hotline</h3>
-                <p className="text-orange-200 text-sm mb-3">24/7 vet emergency line:</p>
-                <span className="font-display font-bold text-2xl text-brand-accent">+91 98765 43210</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-brand-dark mb-3">Follow Us 🐾</h3>
-                <div className="flex gap-3">
-                  {['📘','📸','🐦','▶️'].map(icon=>(
-                    <button key={icon} className="w-11 h-11 rounded-full bg-brand-light flex items-center justify-center hover:bg-brand-primary hover:text-white transition-colors text-lg">{icon}</button>
-                  ))}
+              {BUSINESS.emergencyPhone && (
+                <div className="card bg-brand-dark text-white">
+                  <h3 className="font-bold mb-2">🚨 Emergency Number</h3>
+                  <p className="text-orange-200 text-sm mb-3">For urgent help, call:</p>
+                  <a href={`tel:${BUSINESS.emergencyPhone.replace(/[^\d+]/g, '')}`} className="font-display font-bold text-2xl text-brand-accent">{BUSINESS.emergencyPhone}</a>
                 </div>
-              </div>
+              )}
+              <p className="text-sm text-gray-500">
+                Complaint? Write to our <Link href="/grievance" className="text-brand-primary font-semibold hover:underline">Grievance Officer</Link>.
+              </p>
             </div>
             <div className="lg:col-span-3">
               {sent ? (
@@ -90,7 +89,7 @@ export default function ContactPage() {
                       </div>
                       <div>
                         <label className="text-sm font-semibold text-brand-dark mb-1.5 block">Phone</label>
-                        <input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="+91 98765..." className="input-field"/>
+                        <input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="10-digit mobile number" className="input-field"/>
                       </div>
                     </div>
                     <div>
@@ -119,16 +118,18 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section className="py-16 bg-brand-cream">
-        <div className="page-container text-center">
-          <h2 className="section-title mb-8">We Serve Across India 🇮🇳</h2>
-          <div className="flex flex-wrap justify-center gap-3">
-            {['Mumbai','Delhi','Bangalore','Chennai','Hyderabad','Pune','Kolkata','Ahmedabad','Jaipur','Lucknow','Chandigarh','Kochi'].map(city=>(
-              <span key={city} className="badge bg-white border border-orange-200 text-brand-dark py-2 px-4">📍 {city}</span>
-            ))}
+      {BUSINESS.serviceCities.length > 0 && (
+        <section className="py-16 bg-brand-cream">
+          <div className="page-container text-center">
+            <h2 className="section-title mb-8">Where We Serve</h2>
+            <div className="flex flex-wrap justify-center gap-3">
+              {BUSINESS.serviceCities.map(city=>(
+                <span key={city} className="badge bg-white border border-orange-200 text-brand-dark py-2 px-4">📍 {city}</span>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
       <Footer />
     </div>
   )

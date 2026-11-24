@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import Appointment from '@/models/Appointment'
 import Dog from '@/models/Dog'
+import User from '@/models/User'
+import { notifyBooking } from '@/lib/notify'
+import { validSlot, hoursUntil, MIN_LEAD_HOURS, ACTIVE_STATUSES, slotCapacity } from '@/lib/slots'
 import { requireUser } from '@/lib/auth'
 import { SERVICES } from '@/lib/constants'
 import { str, isValidId, readJson } from '@/lib/validate'
@@ -48,15 +51,34 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Date cannot be in the past' }, { status: 400 })
     }
     if (!time) return NextResponse.json({ error: 'Please choose a time slot' }, { status: 400 })
+    if (!validSlot(time)) return NextResponse.json({ error: 'Please choose one of the available time slots' }, { status: 400 })
+    if (hoursUntil(date, time) < MIN_LEAD_HOURS) {
+      return NextResponse.json({ error: `Please book at least ${MIN_LEAD_HOURS} hours ahead. Pick a later time or another day.` }, { status: 400 })
+    }
 
     let dogId
     let dogName = ''
+    let dogDoc = null
     if (body.dogId) {
       if (!isValidId(String(body.dogId))) return NextResponse.json({ error: 'Invalid dog' }, { status: 400 })
       const dog = await Dog.findOne({ _id: body.dogId, owner: user.id })
       if (!dog) return NextResponse.json({ error: 'Dog not found' }, { status: 404 })
       dogId = dog._id
       dogName = dog.name
+      dogDoc = dog
+    }
+
+    // Same customer + same service + same slot already booked? Stop accidental double bookings.
+    const duplicate = await Appointment.findOne({
+      user: user.id, serviceId: service.id, date, time, status: { $in: ['pending', 'confirmed', 'in_progress'] },
+    }).select('_id')
+    if (duplicate) {
+      return NextResponse.json({ error: 'You already have this service booked for that date and time' }, { status: 409 })
+    }
+
+    // Slot capacity: only so many bookings per time slot, so we are never overbooked.
+    if ((await Appointment.countDocuments({ date, time, status: { $in: ACTIVE_STATUSES } })) >= slotCapacity()) {
+      return NextResponse.json({ error: 'Sorry, that time slot has just been filled. Please choose another time.' }, { status: 409 })
     }
 
     const price = service.price[plan] + (homeVisit ? HOME_VISIT_FEE : 0)
@@ -78,7 +100,14 @@ export async function POST(request) {
       paymentStatus: 'unpaid',
     })
 
-    return NextResponse.json({ success: true, appointment }, { status: 201 })
+    // Alert the owner (email / Telegram) and send the customer a confirmation.
+    // Awaited (with a short timeout inside) because serverless functions can freeze right after responding.
+    const customer = await User.findById(user.id).select('name email phone city address')
+    const sent = await notifyBooking(appointment, customer, dogDoc)
+    appointment.ownerNotified = !!(sent.ownerMail || sent.telegram)
+    await appointment.save().catch(() => {})
+
+    return NextResponse.json({ success: true, appointment, notified: sent }, { status: 201 })
   } catch (err) {
     console.error('POST /api/appointments:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

@@ -14,11 +14,12 @@ export async function GET(request) {
     if (error) return error
     await connectDB()
 
-    const [totalUsers, totalDogs, totalBookings, payments] = await Promise.all([
+    const [totalUsers, totalDogs, totalBookings, payments, newBookings] = await Promise.all([
       User.countDocuments(),
       Dog.countDocuments(),
       Appointment.countDocuments(),
       Payment.find({ status: 'success' }).select('amount createdAt'),
+      Appointment.countDocuments({ seenByAdmin: { $ne: true }, status: { $ne: 'cancelled' } }),
     ])
 
     const totalRevenue = payments.reduce((s, p) => s + p.amount, 0)
@@ -51,7 +52,7 @@ export async function GET(request) {
     ])
 
     return NextResponse.json({
-      stats: { totalUsers, totalDogs, totalBookings, totalRevenue },
+      stats: { totalUsers, totalDogs, totalBookings, totalRevenue, newBookings },
       recentBookings, revenueByService, monthlyRevenue,
     })
   } catch (err) {

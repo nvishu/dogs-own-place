@@ -48,6 +48,12 @@ export async function apiLogout() {
   try { await request('/api/auth/logout', { method: 'POST' }) } catch {}
 }
 
+export async function apiUpdateProfile(body) {
+  const data = await request('/api/auth/me', { method: 'PATCH', body: JSON.stringify(body) })
+  saveUser(data)
+  return data
+}
+
 export async function apiGetMe() {
   return request('/api/auth/me')
 }
@@ -119,8 +125,8 @@ export async function apiAdminDeleteUser(userId) {
   return request('/api/admin/users', { method: 'DELETE', body: JSON.stringify({ userId }) })
 }
 
-export async function apiAdminBookings(status = 'all') {
-  return request(`/api/admin/bookings?status=${encodeURIComponent(status)}`)
+export async function apiAdminBookings(status = 'all', markSeen = false) {
+  return request(`/api/admin/bookings?status=${encodeURIComponent(status)}${markSeen ? '&markSeen=1' : ''}`)
 }
 
 export async function apiAdminUpdateBooking(bookingId, status) {
@@ -146,4 +152,68 @@ export async function apiAdminSetMessageStatus(id, status) {
 
 export async function apiAdminDeleteMessage(id) {
   return request('/api/admin/messages', { method: 'DELETE', body: JSON.stringify({ id }) })
+}
+
+
+// ── Shop orders ──────────────────────────────────────────────────────────
+export async function apiCreateOrder(body) {
+  return request('/api/orders', { method: 'POST', body: JSON.stringify(body) })
+}
+export async function apiGetOrders() {
+  return request('/api/orders')
+}
+export async function apiAdminOrders(markSeen = false) {
+  return request(`/api/admin/orders${markSeen ? '?markSeen=1' : ''}`)
+}
+export async function apiAdminUpdateOrder(orderId, fields) {
+  // fields: { status?, courier?, trackingNo? }  (a plain string is treated as the status)
+  const body = typeof fields === 'string' ? { status: fields } : fields
+  return request('/api/admin/orders', { method: 'PATCH', body: JSON.stringify({ orderId, ...body }) })
+}
+export async function apiAdminRefundOrder(orderId) {
+  return request('/api/admin/refund', { method: 'POST', body: JSON.stringify({ orderId }) })
+}
+export async function apiCancelOrder(orderId, reason = '') {
+  return request(`/api/orders/${orderId}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) })
+}
+export async function apiPaymentConfig() {
+  return request('/api/payments/config')
+}
+export async function apiRazorpayOrder(kind, id) {
+  return request('/api/payments/razorpay/order', { method: 'POST', body: JSON.stringify({ kind, id }) })
+}
+export async function apiRazorpayVerify(payload) {
+  return request('/api/payments/razorpay/verify', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+// ── Account (privacy) ────────────────────────────────────────────────────
+export async function apiDeleteAccount(password) {
+  const data = await request('/api/account/delete', { method: 'POST', body: JSON.stringify({ password }) })
+  try { localStorage.removeItem('dop_user') } catch {}
+  return data
+}
+
+// ── Password reset & email verification ─────────────────────────────────
+export async function apiForgotPassword(email) {
+  return request('/api/auth/forgot', { method: 'POST', body: JSON.stringify({ email }) })
+}
+export async function apiResetPassword(token, password) {
+  return request('/api/auth/reset', { method: 'POST', body: JSON.stringify({ token, password }) })
+}
+export async function apiVerifyEmail(token) {
+  return request('/api/auth/verify-email', { method: 'POST', body: JSON.stringify({ token }) })
+}
+export async function apiResendVerification() {
+  return request('/api/auth/resend-verification', { method: 'POST' })
+}
+
+// ── Booking slots ────────────────────────────────────────────────────────
+export async function apiAvailability(date) {
+  return request(`/api/appointments/availability?date=${encodeURIComponent(date)}`)
+}
+export async function apiReschedule(id, date, time) {
+  return request(`/api/appointments/${id}/reschedule`, { method: 'POST', body: JSON.stringify({ date, time }) })
+}
+export async function apiAdminAgenda(days = 14) {
+  return request(`/api/admin/agenda?days=${days}`)
 }

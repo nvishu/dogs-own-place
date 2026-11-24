@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import { apiGetAppointments, apiGetPayments, apiCreatePayment } from '@/lib/apiClient'
+import { apiGetAppointments, apiGetPayments, apiCreatePayment, apiPaymentConfig } from '@/lib/apiClient'
+import { payOnline } from '@/lib/payFlow'
 
 function PaymentContent() {
   const router = useRouter()
@@ -18,6 +19,7 @@ function PaymentContent() {
   const [selectedAppt, setSelectedAppt] = useState(null)
   const [txnId, setTxnId] = useState('')
   const [error, setError] = useState('')
+  const [cfg, setCfg] = useState(null) // { razorpay, mock } once loaded
   const [upiId, setUpiId] = useState('')
   const [cardForm, setCardForm] = useState({ number: '', name: '', expiry: '', cvv: '' })
 
@@ -35,6 +37,20 @@ function PaymentContent() {
       .catch(() => {})
       .finally(() => setFetching(false))
   }, [router])
+
+  useEffect(() => { apiPaymentConfig().then(setCfg).catch(() => setCfg({ razorpay: false, mock: false })) }, [])
+
+  const payWithRazorpay = async () => {
+    if (!selectedAppt) return
+    setLoading(true); setError('')
+    try {
+      const res = await payOnline('appointment', selectedAppt._id)
+      setTxnId(res.txnId || '')
+      setPaid(true)
+    } catch (err) {
+      if (!err.dismissed) setError(err.message || 'Payment failed. Please try again.')
+    } finally { setLoading(false) }
+  }
 
   const formatCard = (v) => v.replace(/\D/g,'').replace(/(\d{4})/g,'$1 ').trim().slice(0,19)
   const formatExpiry = (v) => v.replace(/\D/g,'').replace(/(\d{2})(\d)/,'$1/$2').slice(0,5)
@@ -143,6 +159,23 @@ function PaymentContent() {
               )}
 
               {/* Payment form */}
+              {cfg === null ? <div className="card h-40 animate-pulse" /> : cfg.razorpay ? (
+                <div className="card">
+                  <h2 className="font-bold text-brand-dark mb-2">Pay securely online</h2>
+                  <p className="text-sm text-gray-500 mb-4">UPI, cards and netbanking via Razorpay. You will not be asked for card details on this website.</p>
+                  {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-4 text-sm">⚠️ {error}</div>}
+                  <button type="button" onClick={payWithRazorpay} disabled={loading || !selectedAppt}
+                    className="btn-primary w-full justify-center py-4 text-base disabled:opacity-60">
+                    {loading ? 'Opening payment…' : `🔒 Pay ₹${amount.toLocaleString()}`}
+                  </button>
+                </div>
+              ) : !cfg.mock ? (
+                <div className="card text-center py-10">
+                  <div className="text-4xl mb-3">🏪</div>
+                  <h2 className="font-bold text-brand-dark mb-2">Online payment is not available yet</h2>
+                  <p className="text-sm text-gray-500">Your booking is saved. You can pay when we provide the service — please contact us if you have any questions.</p>
+                </div>
+              ) : (
               <div className="card">
                 <h2 className="font-bold text-brand-dark mb-5">Choose Payment Method</h2>
                 {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-4 text-sm">⚠️ {error}</div>}
@@ -220,6 +253,8 @@ function PaymentContent() {
                   </button>
                 </form>
               </div>
+
+              )}
 
               {/* Past payments */}
               {payments.length > 0 && (

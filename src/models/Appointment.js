@@ -25,6 +25,11 @@ const AppointmentSchema = new mongoose.Schema({
   },
   paymentId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
   cancelReason:{ type: String, default: '' },
+  razorpayOrderId: { type: String, default: '', index: true },
+  ownerNotified:{ type: Boolean, default: false },
+  reminderSent: { type: Boolean, default: false },
+  rescheduleCount: { type: Number, default: 0 },
+  seenByAdmin: { type: Boolean, default: false },
 }, { timestamps: true })
 
 // Index for fast user lookups
